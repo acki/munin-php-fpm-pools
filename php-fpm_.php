@@ -3,6 +3,9 @@
 
 /**
 * @author n2j7
+* @doc_link http://munin-monitoring.org/wiki/protocol-config
+* @doc_link http://munin-monitoring.org/wiki/PluginConcise
+* @doc_link http://munin-monitoring.org/wiki/HowToWritePlugins
 */
 
 define('EXIT_OK', 0);
@@ -22,10 +25,10 @@ $php_bin = getenv('phpbin');
 $php_bin = ($php_bin===false) ? 'php-fpm' : $php_bin;// default value if not set in env
 // php memory warning border
 $php_mem_warn = getenv('phpmemwarn');
-$php_mem_warn = ($php_mem_warn===false) ? '100000' : $php_mem_warn;// default value if not set in env
+$php_mem_warn = ($php_mem_warn===false) ? '100' : $php_mem_warn;// default value in Mb if not set in env
 // php memory critical border
 $php_mem_crit = getenv('phpmemcrit');
-$php_mem_crit = ($php_mem_crit===false) ? '200000' : $php_mem_crit;// default value if not set in env
+$php_mem_crit = ($php_mem_crit===false) ? '200' : $php_mem_crit;// default value in Mb if not set in env
 
 $query = null;
 $rq_poolname = null;
@@ -40,14 +43,14 @@ else{
 $configs = array(
 	'memory' => array(
 		'graph_title PHP5-FPM Memory Usage',
-		'graph_vlabel RAM',
+		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
 		'ram.label ram',
 	),
 	'memory_multi' => array(
 		'graph_title PHP5-FPM Memory Usage',
-		'graph_vlabel RAM',
+		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
 	)
@@ -129,11 +132,11 @@ switch($mode) {
 		// configure our pools
 		if ($is_config_requested) {
 			foreach ($pools_mem as $pool_name => $value) {
-				echo "ram_${pool_name}.label = ${value}\n";
-				echo "ram_${pool_name}.draw = AREASTACK\n";
-				echo "ram_${pool_name}.type = GAUGE\n";
-				echo "ram_${pool_name}.warning = ${php_mem_warn}\n";
-				echo "ram_${pool_name}.critical = ${php_mem_crit}\n";
+				echo "ram_${pool_name}.label ${pool_name}\n";
+				echo "ram_${pool_name}.draw AREASTACK\n";
+				echo "ram_${pool_name}.type GAUGE\n";
+				echo "ram_${pool_name}.warning ${php_mem_warn}\n";
+				echo "ram_${pool_name}.critical ${php_mem_crit}\n";
 				// @EXPLAIN: let munin choose color for areas
 				//echo "ram_${pool_name}.colour = rrggbb\n";
 				// @TODO: draw crit and warn lines once per graph
@@ -142,15 +145,17 @@ switch($mode) {
 			}
 			exit(EXIT_OK);
 		}
+		// sort by keys for preventing color changes for a time
+		ksort($pools_mem);
 
 		if ($is_single_graph) {
 			$val = isset($pools_mem[$rq_poolname]) ? $pools_mem[$rq_poolname] : 0;
-			echo "ram.value = ${val}\n";
+			echo "ram.value ${val}\n";
 			exit(EXIT_OK);
 		}
 		else{
 			foreach ($pools_mem as $pool_name => $value) {
-				echo "ram_${pool_name} = ${value} RAM\n";
+				echo "ram_${pool_name}.value ${value}\n";
 			}
 			exit(EXIT_OK);
 		}

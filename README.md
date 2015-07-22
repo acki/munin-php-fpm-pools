@@ -73,3 +73,12 @@ sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_poolname
 sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_connections
 
 ```
+
+
+Env variables:
+```
+phpbin - php fpm executable file name
+phpmemwarn - warning level of php memory usage in Mb (based on 1024)
+phpmemcrit - critical level of php memory usage in Mb (based on 1024)
+
+```
