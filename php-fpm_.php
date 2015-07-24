@@ -40,7 +40,7 @@ $configs = array(
 		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
-		'ram.label ram',
+		'ram.label RAM',
 	),
 	'memory_multi' => array(
 		'graph_title PHP5-FPM Memory Usage',
@@ -63,7 +63,20 @@ $configs = array(
 		'graph_vlabel Connections',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
-	)
+	),
+	'processes' => array(
+		'graph_title PHP5-FPM Processes Count',
+		'graph_vlabel Processes',
+		'graph_category PHP',
+		'graph_args --base 1000 -l 0',
+		'proc.label Pool',
+	),
+	'processes_multi' => array(
+		'graph_title PHP5-FPM Processes Count',
+		'graph_vlabel Processes',
+		'graph_category PHP',
+		'graph_args --base 1000 -l 0',
+	),
 );
 
 function getDefinedPools() {
@@ -237,6 +250,72 @@ switch($mode) {
 	break;
 
 	case 'processes':
+		$ps_output = null;
+		exec("ps -eo command | grep ${php_bin} | grep -v grep", $ps_output);
+		$pools_proc = array();
+		if (!is_array($ps_output)) {
+			fwrite(STDERR, "Can't build and execute correct command\n");
+			exit(EXIT_WRONG_MODE);
+		}
+
+		foreach ($ps_output as $line) {
+			//split fields
+			$line = trim($line);
+			$line_parts = explode(' ', $line);
+			//$line_parts = preg_split('/\s+/', $line);
+			if (strpos($line_parts[0], $php_bin) === false) {
+				// exclude wrong processes
+				continue;
+			}
+
+			list($proc_name, $type, $pool_name) = $line_parts;
+
+			// skip master process
+			if ($type == 'master') {
+				continue;
+			}
+
+			// dots are depricated by munin
+			// (due to they are used for splitting structures)
+			// The characters must be [a-zA-Z0-9_]
+			$pool_name = str_replace('.', '_', $pool_name);
+
+			// for single graph skip others
+			if ($is_single_graph && $pool_name != $rq_poolname) {
+				continue;
+			}
+
+			if (!array_key_exists($pool_name, $pools_proc)){
+				$pools_proc[$pool_name] = 1;
+			}
+			else {
+				$pools_proc[$pool_name]++;
+			}
+		}
+
+		// configure our pools
+		if ($is_config_requested) {
+			foreach ($pools_proc as $pool_name => $value) {
+				echo "proc_${pool_name}.label ${pool_name}\n";
+				echo "proc_${pool_name}.draw LINE1\n";
+				echo "proc_${pool_name}.type GAUGE\n";
+			}
+			exit(EXIT_OK);
+		}
+		// sort by keys for preventing color changes for a time
+		ksort($pools_proc);
+
+		if ($is_single_graph) {
+			$val = isset($pools_proc[$rq_poolname]) ? $pools_proc[$rq_poolname] : 0;
+			echo "proc.value ${val}\n";
+			exit(EXIT_OK);
+		}
+		else{
+			foreach ($pools_proc as $pool_name => $value) {
+				echo "proc_${pool_name}.value ${value}\n";
+			}
+			exit(EXIT_OK);
+		}
 	break;
 
 	case 'status':

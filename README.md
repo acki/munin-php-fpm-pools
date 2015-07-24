@@ -8,7 +8,7 @@ This plugin requires PHP CLI.
 #!bash
 
 cd /usr/share/munin/plugins/
-sudo wget -O php-fpm_ https://bitbucket.org/n2j7/munin-php-fpm-pools/raw/master/php-fpm_
+sudo wget -O php-fpm_ https://bitbucket.org/n2j7/munin-php-fpm-pools/raw/default/php-fpm_.php
 sudo chmod +x php-fpm_
 
 ```
