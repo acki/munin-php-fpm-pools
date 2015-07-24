@@ -100,15 +100,15 @@ $configs = array(
 		'graph_vlabel Processes',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
-		'actv.label Accepted',
+		'actv.label Total Accepted',
 		'actv.draw LINE2',
 		'actv.type GAUGE',
 		'actv.min 0',
-		'idle.label Iddle',
+		'idle.label Total Iddle',
 		'idle.draw LINE2',
 		'idle.type GAUGE',
 		'idle.min 0',
-		'summ.label Total',
+		'summ.label Global Total',
 		'summ.draw AREA',
 		'summ.type GAUGE',
 		'summ.min 0',
@@ -240,7 +240,7 @@ switch($mode) {
 		}
 		else{
 			foreach ($pools_mem as $pool_name => $mem) {
-				$cnt = isset($pools_cnt[$rq_poolname]) ? $pools_cnt[$rq_poolname] : 1;
+				$cnt = isset($pools_cnt[$pool_name]) ? $pools_cnt[$pool_name] : 1;
 				$value = $mem / $cnt;
 				echo "avg_${pool_name}.value ${value}\n";
 			}
