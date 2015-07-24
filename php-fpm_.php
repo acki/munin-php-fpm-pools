@@ -23,12 +23,6 @@ $is_single_graph = (count($settings)==3);
 // php binary file
 $php_bin = getenv('phpbin');
 $php_bin = ($php_bin===false) ? 'php-fpm' : $php_bin;// default value if not set in env
-// php memory warning border
-$php_mem_warn = getenv('phpmemwarn');
-$php_mem_warn = ($php_mem_warn===false) ? '100' : $php_mem_warn;// default value in Mb if not set in env
-// php memory critical border
-$php_mem_crit = getenv('phpmemcrit');
-$php_mem_crit = ($php_mem_crit===false) ? '200' : $php_mem_crit;// default value in Mb if not set in env
 
 $query = null;
 $rq_poolname = null;
@@ -53,8 +47,40 @@ $configs = array(
 		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
+	),
+	'connections' => array(
+		'graph_title PHP5-FPM Accepted Connections',
+		'graph_vlabel Connections',
+		'graph_category PHP',
+		'graph_args --base 1000 -l 0',
+		'conn.label Accepted',
+		'conn.draw AREA',
+		'conn.type DERIVE',
+		'conn.min 0',
+	),
+	'connections_multi' => array(
+		'graph_title PHP5-FPM Accepted Connections',
+		'graph_vlabel Connections',
+		'graph_category PHP',
+		'graph_args --base 1000 -l 0',
 	)
 );
+
+function getDefinedPools() {
+	$pools_cnt = (int) getenv('fpmpoolscount');
+	if ($pools_cnt==0) {
+		return array();
+	}
+
+	$pools = array();
+	for ($i=0; $i < $pools_cnt; $i++) { 
+		$name = getenv('fpmpool_' . $i . '_name');
+		$url = getenv('fpmpool_' . $i . '_url');
+		$pools[$name] = $url;
+	}
+
+	return $pools;
+}
 
 // print config
 if ($is_config_requested) {
@@ -83,6 +109,46 @@ switch($mode) {
 	break;
 
 	case 'connections':
+		$responses = array();
+		$pools = getDefinedPools();
+
+		// configure our pools
+		if ($is_config_requested) {
+			foreach ($pools as $pool_name => $value) {
+				echo "conn_${pool_name}.label ${pool_name}\n";
+				echo "conn_${pool_name}.draw LINE1\n";
+				echo "conn_${pool_name}.type DERIVE\n";
+				echo "conn_${pool_name}.min 0\n";
+			}
+			exit(EXIT_OK);
+		}
+
+		foreach ($pools as $name => $url) {
+			if ($is_single_graph && $name != $rq_poolname){
+				continue;
+			}
+
+			$resp = file_get_contents($url);
+			if ($resp===false) {
+				fwrite(STDERR, "Can't get stats info for ${name} from ${url}\n");
+				continue;
+			}
+			$responses[$name] = json_decode($resp, true);
+		}
+
+		if ($is_single_graph) {
+			$val = isset($responses[$rq_poolname]) ? $responses[$rq_poolname]['accepted conn'] : 0;
+			echo "conn.value ${val}\n";
+			exit(EXIT_OK);
+		}
+		else{
+			foreach ($responses as $pool_name => $data) {
+				$value = $data['accepted conn'];
+				echo "conn_${pool_name}.value ${value}\n";
+			}
+			exit(EXIT_OK);
+		}
+
 	break;
 
 	case 'memory':
@@ -131,6 +197,14 @@ switch($mode) {
 
 		// configure our pools
 		if ($is_config_requested) {
+			// php memory warning border
+			$php_mem_warn = getenv('phpmemwarn');
+			$php_mem_warn = ($php_mem_warn===false) ? '100' : $php_mem_warn;// default value in Mb if not set in env
+
+			// php memory critical border
+			$php_mem_crit = getenv('phpmemcrit');
+			$php_mem_crit = ($php_mem_crit===false) ? '200' : $php_mem_crit;// default value in Mb if not set in env
+
 			foreach ($pools_mem as $pool_name => $value) {
 				echo "ram_${pool_name}.label ${pool_name}\n";
 				echo "ram_${pool_name}.draw AREASTACK\n";
@@ -165,7 +239,7 @@ switch($mode) {
 	case 'processes':
 	break;
 
-	case 'connections':
+	case 'status':
 	break;
 
 	default:

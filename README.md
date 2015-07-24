@@ -77,8 +77,11 @@ sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_connecti
 
 Env variables:
 ```
-phpbin - php fpm executable file name
-phpmemwarn - warning level of php memory usage in Mb (based on 1024)
-phpmemcrit - critical level of php memory usage in Mb (based on 1024)
+phpbin - php fpm executable file name [php-fpm by default]
+phpmemwarn - warning level of php memory usage in Mb (based on 1024) [100 by default]
+phpmemcrit - critical level of php memory usage in Mb (based on 1024) [200 by default]
+fpmpoolscount - the number of defined pools
+fpmpool_X_name - the name of X pool (starts from 0) in list [a-zA-Z0-9_] (the same as in symlink)
+fpmpool_X_url - the url for getting stats info (in json format) of X pool (starts from 0)
 
 ```

@@ -1,0 +1,10 @@
+[php-fpm*]
+env.phpmemwarn 1000
+env.phpmemcrit 2000
+env.fpmpoolscount 3
+env.fpmpool_0_name www
+env.fpmpool_0_url http://localhost/fpm-status?json
+env.fpmpool_1_name www2
+env.fpmpool_1_url http://localhost2/fpm-status?json
+env.fpmpool_2_name www3
+env.fpmpool_2_url http://localhost3/fpm-status?json
