@@ -77,6 +77,42 @@ $configs = array(
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
 	),
+	'status' => array(
+		'graph_title PHP5-FPM Processes Statuses',
+		'graph_vlabel Processes',
+		'graph_category PHP',
+		'graph_args --base 1000 -l 0',
+		'actv.label Accepted',
+		'actv.draw AREASTACK',
+		'actv.type GAUGE',
+		'actv.min 0',
+		'idle.label Iddle',
+		'idle.draw AREASTACK',
+		'idle.type GAUGE',
+		'idle.min 0',
+		'summ.label Total',
+		'summ.draw LINE2',
+		'summ.type GAUGE',
+		'summ.min 0',
+	),
+	'status_multi' => array(
+		'graph_title PHP5-FPM Processes Statuses',
+		'graph_vlabel Processes',
+		'graph_category PHP',
+		'graph_args --base 1000 -l 0',
+		'actv.label Accepted',
+		'actv.draw AREASTACK',
+		'actv.type GAUGE',
+		'actv.min 0',
+		'idle.label Iddle',
+		'idle.draw AREASTACK',
+		'idle.type GAUGE',
+		'idle.min 0',
+		'summ.label Total',
+		'summ.draw LINE2',
+		'summ.type GAUGE',
+		'summ.min 0',
+	),
 );
 
 function getDefinedPools() {
@@ -161,7 +197,6 @@ switch($mode) {
 			}
 			exit(EXIT_OK);
 		}
-
 	break;
 
 	case 'memory':
@@ -319,6 +354,61 @@ switch($mode) {
 	break;
 
 	case 'status':
+		$responses = array();
+		$pools = getDefinedPools();
+
+		// configure our pools
+		if ($is_config_requested) {
+			foreach ($pools as $pool_name => $value) {
+				echo "actv_${pool_name}.label ${pool_name}\n";
+				echo "actv_${pool_name}.draw LINESTACK1\n";
+				echo "actv_${pool_name}.type GAUGE\n";
+				echo "actv_${pool_name}.min 0\n";
+			}
+			exit(EXIT_OK);
+		}
+
+		list($actv, $idle, $summ) = array(0,0,0); // default values
+
+		foreach ($pools as $name => $url) {
+			if ($is_single_graph && $name != $rq_poolname){
+				continue;
+			}
+
+			$resp = file_get_contents($url);
+			if ($resp===false) {
+				fwrite(STDERR, "Can't get stats info for ${name} from ${url}\n");
+				continue;
+			}
+			$responses[$name] = json_decode($resp, true);
+
+			if (isset($responses[$name]['active processes'])) {
+				$actv += (int)$responses[$name]['active processes'];
+			}
+			if (isset($responses[$name]['idle processes'])) {
+				$idle += (int)$responses[$name]['idle processes'];
+			}
+			if (isset($responses[$name]['total processes'])) {
+				$summ += (int)$responses[$name]['total processes'];
+			}
+		}
+
+		if ($is_single_graph) {
+			echo "actv.value ${actv}\n";
+			echo "idle.value ${idle}\n";
+			echo "summ.value ${summ}\n";
+			exit(EXIT_OK);
+		}
+		else{
+			echo "actv.value ${actv}\n";
+			echo "idle.value ${idle}\n";
+			echo "summ.value ${summ}\n";
+			foreach ($responses as $pool_name => $data) {
+				$value = $data['active processes'];
+				echo "actv_${pool_name}.value ${value}\n";
+			}
+			exit(EXIT_OK);
+		}
 	break;
 
 	default:
