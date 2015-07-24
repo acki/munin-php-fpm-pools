@@ -101,17 +101,30 @@ $configs = array(
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
 		'actv.label Accepted',
-		'actv.draw AREASTACK',
+		'actv.draw LINE2',
 		'actv.type GAUGE',
 		'actv.min 0',
 		'idle.label Iddle',
-		'idle.draw AREASTACK',
+		'idle.draw LINE2',
 		'idle.type GAUGE',
 		'idle.min 0',
 		'summ.label Total',
-		'summ.draw LINE2',
+		'summ.draw AREA',
 		'summ.type GAUGE',
 		'summ.min 0',
+	),
+	'average' => array(
+		'graph_title PHP5-FPM Average Process Memory Usage',
+		'graph_vlabel RAM Mb',
+		'graph_category PHP',
+		'graph_args --base 1024',
+		'avg.label RAM',
+	),
+	'average_multi' => array(
+		'graph_title PHP5-FPM Average Process Memory Usage',
+		'graph_vlabel RAM Mb',
+		'graph_category PHP',
+		'graph_args --base 1024',
 	),
 );
 
@@ -155,6 +168,85 @@ if ($is_config_requested) {
 // print data
 switch($mode) {
 	case 'average':
+		$ps_output = null;
+		exec("ps -eo rss,command | grep ${php_bin} | grep -v grep", $ps_output);
+		$pools_mem = array();
+		$pools_cnt = array();
+		if (!is_array($ps_output)) {
+			fwrite(STDERR, "Can't build and execute correct command\n");
+			exit(EXIT_WRONG_MODE);
+		}
+		foreach ($ps_output as $line) {
+			//split fields
+			$line = trim($line);
+			$line_parts = explode(' ', $line);
+			//$line_parts = preg_split('/\s+/', $line);
+			if (strpos($line_parts[1], $php_bin) === false) {
+				// exclude wrong processes
+				continue;
+			}
+
+			list($mem, $proc_name, $type, $pool_name) = $line_parts;
+
+			// skip master process
+			if ($type == 'master') {
+				continue;
+			}
+
+			// dots are depricated by munin
+			// (due to they are used for splitting structures)
+			// The characters must be [a-zA-Z0-9_]
+			$pool_name = str_replace('.', '_', $pool_name);
+
+			// for single graph skip others
+			if ($is_single_graph && $pool_name != $rq_poolname) {
+				continue;
+			}
+			
+
+			if (!array_key_exists($pool_name, $pools_mem)){
+				$pools_mem[$pool_name] = $mem/1024;
+			}
+			else {
+				$pools_mem[$pool_name] += $mem/1024;
+			}
+
+			if (!array_key_exists($pool_name, $pools_cnt)){
+				$pools_cnt[$pool_name] = 1;
+			}
+			else {
+				$pools_cnt[$pool_name]++;
+			}
+		}
+
+		// configure our pools
+		if ($is_config_requested) {
+			foreach ($pools_mem as $pool_name => $value) {
+				echo "avg_${pool_name}.label ${pool_name}\n";
+				echo "avg_${pool_name}.draw LINE2\n";
+				echo "avg_${pool_name}.type GAUGE\n";
+			}
+			exit(EXIT_OK);
+		}
+		// sort by keys for preventing color changes for a time
+		ksort($pools_mem);
+
+		if ($is_single_graph) {
+			$mem = isset($pools_mem[$rq_poolname]) ? $pools_mem[$rq_poolname] : 0;
+			$cnt = isset($pools_cnt[$rq_poolname]) ? $pools_cnt[$rq_poolname] : 1;
+			$val = $mem/$cnt;
+			echo "avg.value ${val}\n";
+			exit(EXIT_OK);
+		}
+		else{
+			foreach ($pools_mem as $pool_name => $mem) {
+				$cnt = isset($pools_cnt[$rq_poolname]) ? $pools_cnt[$rq_poolname] : 1;
+				$value = $mem / $cnt;
+				echo "avg_${pool_name}.value ${value}\n";
+			}
+			exit(EXIT_OK);
+		}
+
 	break;
 
 	case 'connections':
@@ -359,12 +451,17 @@ switch($mode) {
 
 		// configure our pools
 		if ($is_config_requested) {
+			$order_pools = array();
 			foreach ($pools as $pool_name => $value) {
 				echo "actv_${pool_name}.label ${pool_name}\n";
-				echo "actv_${pool_name}.draw LINESTACK1\n";
+				echo "actv_${pool_name}.draw AREASTACK\n";
 				echo "actv_${pool_name}.type GAUGE\n";
 				echo "actv_${pool_name}.min 0\n";
+				array_push($order_pools, "actv_${pool_name}");
 			}
+			$pools_str = implode(' ', $order_pools);
+			echo sprintf("graph_order summ %s actv idle\n", $pools_str);
+
 			exit(EXIT_OK);
 		}
 
@@ -400,13 +497,14 @@ switch($mode) {
 			exit(EXIT_OK);
 		}
 		else{
-			echo "actv.value ${actv}\n";
-			echo "idle.value ${idle}\n";
 			echo "summ.value ${summ}\n";
 			foreach ($responses as $pool_name => $data) {
 				$value = $data['active processes'];
 				echo "actv_${pool_name}.value ${value}\n";
 			}
+			echo "actv.value ${actv}\n";
+			$idle = $actv + $idle;// second stack on single graph
+			echo "idle.value ${idle}\n";
 			exit(EXIT_OK);
 		}
 	break;
