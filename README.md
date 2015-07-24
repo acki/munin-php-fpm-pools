@@ -67,10 +67,10 @@ Connection statuses count:
 #!bash
 
 # per pool
-sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_poolname_connections
+sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_poolname_status
 
 # alltogether
-sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_connections
+sudo ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_status
 
 ```
 
