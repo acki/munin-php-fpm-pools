@@ -36,20 +36,20 @@ else{
 
 $configs = array(
 	'memory' => array(
-		'graph_title PHP5-FPM Memory Usage',
+		'graph_title PHP-FPM Memory Usage',
 		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
 		'ram.label RAM',
 	),
 	'memory_multi' => array(
-		'graph_title PHP5-FPM Memory Usage',
+		'graph_title PHP-FPM Memory Usage',
 		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
 	),
 	'connections' => array(
-		'graph_title PHP5-FPM Accepted Connections',
+		'graph_title PHP-FPM Accepted Connections',
 		'graph_vlabel Connections',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
@@ -59,26 +59,26 @@ $configs = array(
 		'conn.min 0',
 	),
 	'connections_multi' => array(
-		'graph_title PHP5-FPM Accepted Connections',
+		'graph_title PHP-FPM Accepted Connections',
 		'graph_vlabel Connections',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
 	),
 	'processes' => array(
-		'graph_title PHP5-FPM Processes Count',
+		'graph_title PHP-FPM Processes Count',
 		'graph_vlabel Processes',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
 		'proc.label Pool',
 	),
 	'processes_multi' => array(
-		'graph_title PHP5-FPM Processes Count',
+		'graph_title PHP-FPM Processes Count',
 		'graph_vlabel Processes',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
 	),
 	'status' => array(
-		'graph_title PHP5-FPM Processes Statuses',
+		'graph_title PHP-FPM Processes Statuses',
 		'graph_vlabel Processes',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
@@ -96,7 +96,7 @@ $configs = array(
 		'summ.min 0',
 	),
 	'status_multi' => array(
-		'graph_title PHP5-FPM Processes Statuses',
+		'graph_title PHP-FPM Processes Statuses',
 		'graph_vlabel Processes',
 		'graph_category PHP',
 		'graph_args --base 1000 -l 0',
@@ -114,14 +114,14 @@ $configs = array(
 		'summ.min 0',
 	),
 	'average' => array(
-		'graph_title PHP5-FPM Average Process Memory Usage',
+		'graph_title PHP-FPM Average Process Memory Usage',
 		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
 		'avg.label RAM',
 	),
 	'average_multi' => array(
-		'graph_title PHP5-FPM Average Process Memory Usage',
+		'graph_title PHP-FPM Average Process Memory Usage',
 		'graph_vlabel RAM Mb',
 		'graph_category PHP',
 		'graph_args --base 1024',
@@ -135,7 +135,7 @@ function getDefinedPools() {
 	}
 
 	$pools = array();
-	for ($i=0; $i < $pools_cnt; $i++) { 
+	for ($i=0; $i < $pools_cnt; $i++) {
 		$name = getenv('fpmpool_' . $i . '_name');
 		$url = getenv('fpmpool_' . $i . '_url');
 		$pools[$name] = $url;
@@ -202,7 +202,7 @@ switch($mode) {
 			if ($is_single_graph && $pool_name != $rq_poolname) {
 				continue;
 			}
-			
+
 
 			if (!array_key_exists($pool_name, $pools_mem)){
 				$pools_mem[$pool_name] = $mem/1024;
@@ -325,7 +325,7 @@ switch($mode) {
 			if ($is_single_graph && $pool_name != $rq_poolname) {
 				continue;
 			}
-			
+
 
 			if (!array_key_exists($pool_name, $pools_mem)){
 				$pools_mem[$pool_name] = $mem/1024;
@@ -339,11 +339,11 @@ switch($mode) {
 		if ($is_config_requested) {
 			// php memory warning border
 			$php_mem_warn = getenv('phpmemwarn');
-			$php_mem_warn = ($php_mem_warn===false) ? '100' : $php_mem_warn;// default value in Mb if not set in env
+			$php_mem_warn = ($php_mem_warn===false) ? '512' : $php_mem_warn;// default value in Mb if not set in env
 
 			// php memory critical border
 			$php_mem_crit = getenv('phpmemcrit');
-			$php_mem_crit = ($php_mem_crit===false) ? '200' : $php_mem_crit;// default value in Mb if not set in env
+			$php_mem_crit = ($php_mem_crit===false) ? '2048' : $php_mem_crit;// default value in Mb if not set in env
 
 			foreach ($pools_mem as $pool_name => $value) {
 				echo "ram_${pool_name}.label ${pool_name}\n";
@@ -373,7 +373,7 @@ switch($mode) {
 			}
 			exit(EXIT_OK);
 		}
-		
+
 	break;
 
 	case 'processes':
