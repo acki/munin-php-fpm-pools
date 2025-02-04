@@ -3,17 +3,40 @@ Setup Plugin
 
 This plugin requires PHP CLI.
 
+### Complete setup
+
+All:
+```
+wget -O /usr/share/munin/plugins/php-fpm_ https://raw.githubusercontent.com/acki/munin-php-fpm-pools/refs/heads/master/php-fpm_
+chmod +x /usr/share/munin/plugins/php-fpm_
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_average
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_connections
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_memory
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_processes
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_status
+```
+
 ### Install Plugin
 ```
 #!bash
 
 cd /usr/share/munin/plugins/
-sudo wget -O php-fpm_ https://bitbucket.org/n2j7/munin-php-fpm-pools/raw/default/php-fpm_.php
+sudo wget -O php-fpm_ https://raw.githubusercontent.com/acki/munin-php-fpm-pools/refs/heads/master/php-fpm_
 sudo chmod +x php-fpm_
 
 ```
 
 ### Setup Graphs
+
+All:
+```
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_average
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_connections
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_memory
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_processes
+ln -s /usr/share/munin/plugins/php-fpm_ /etc/munin/plugins/php-fpm_status
+```
+
 Average process memory:
 ```
 #!bash
