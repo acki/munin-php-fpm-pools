@@ -21,6 +21,7 @@ if (!$match_result) {
 $is_config_requested = ($argc == 2 && $argv[1]=='config');
 $is_single_graph = (count($settings)==3);
 // php binary file
+global $php_bin;
 $php_bin = getenv('phpbin');
 $php_bin = ($php_bin===false) ? 'php-fpm' : $php_bin;// default value if not set in env
 
@@ -129,6 +130,7 @@ $configs = array(
 );
 
 function getDefinedPools() {
+	global $php_bin;
 	$ps_output = null;
 	exec("ps -eo rss,command | grep ${php_bin} | grep -v grep", $ps_output);
 	$pools = array();
