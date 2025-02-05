@@ -129,16 +129,29 @@ $configs = array(
 );
 
 function getDefinedPools() {
-	$pools_cnt = (int) getenv('fpmpoolscount');
-	if ($pools_cnt==0) {
-		return array();
-	}
-
+	$ps_output = null;
+	exec("ps -eo rss,command | grep ${php_bin} | grep -v grep", $ps_output);
 	$pools = array();
-	for ($i=0; $i < $pools_cnt; $i++) {
-		$name = getenv('fpmpool_' . $i . '_name');
-		$url = getenv('fpmpool_' . $i . '_url');
-		$pools[$name] = $url;
+	if (!is_array($ps_output)) {
+		fwrite(STDERR, "Can't build and execute correct command\n");
+		exit(EXIT_WRONG_MODE);
+	}
+	foreach ($ps_output as $line) {
+		//split fields
+		$line = trim($line);
+		$line_parts = explode(' ', $line);
+		if (strpos($line_parts[1], $php_bin) === false) {
+			// exclude wrong processes
+			continue;
+		}
+
+		list($mem, $proc_name, $type, $pool_name) = $line_parts;
+
+		// skip master process
+		if ($type == 'master') {
+			continue;
+		}
+		$pools[$pool_name] = 'SCRIPT_NAME=/fpmstatus SCRIPT_FILENAME=/fpmstatus QUERY_STRING=json REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/www/' . str_replace( 'www.', '', $pool_name ) . '/php-fpm.sock';
 	}
 
 	return $pools;
@@ -472,7 +485,7 @@ switch($mode) {
 				continue;
 			}
 
-			$resp = file_get_contents($url);
+			$resp = shell_exec($url);
 			if ($resp===false) {
 				fwrite(STDERR, "Can't get stats info for ${name} from ${url}\n");
 				continue;
